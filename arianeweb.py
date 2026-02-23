@@ -260,10 +260,6 @@ def sort_key(d: dict) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Application TUI
-# ---------------------------------------------------------------------------
-
-# ---------------------------------------------------------------------------
 # Écran de visualisation d'une décision
 # ---------------------------------------------------------------------------
 
@@ -348,9 +344,10 @@ class DecisionScreen(ModalScreen):
 
         if texte.startswith("[Erreur :"):
             # Échec : on conserve _sinequa_id pour permettre une nouvelle tentative
+            safe_err = texte.replace("[", "\\[")
             def _show_error() -> None:
                 self.query_one("#decision-text", Static).update(
-                    f"[red]{texte}[/red]"
+                    f"[red]{safe_err}[/red]"
                 )
                 btn = self.query_one("#download-btn", Button)
                 btn.disabled = False
@@ -765,12 +762,15 @@ class ArianeWebTUI(App):
         }
         # Nettoyer le nom de fichier (guillemets, espaces, slashs…)
         safe_query = re.sub(r'[^\w\-]', '_', query)
-        safe_query = re.sub(r'_+', '_', safe_query).strip('_')
+        safe_query = re.sub(r'_+', '_', safe_query).strip('_') or "export"
         out_file = f"resultats_{safe_query}.json"
-        with open(out_file, "w", encoding="utf-8") as f:
-            json.dump(output, f, ensure_ascii=False, indent=2)
-        self._log(f"[bold green]✓ Exporté → {out_file}[/bold green]")
-        self._set_status(f"Fichier créé : {out_file}")
+        try:
+            with open(out_file, "w", encoding="utf-8") as f:
+                json.dump(output, f, ensure_ascii=False, indent=2)
+            self._log(f"[bold green]✓ Exporté → {out_file}[/bold green]")
+            self._set_status(f"Fichier créé : {out_file}")
+        except OSError as exc:
+            self._log(f"[red]✗ Impossible d'écrire {out_file} : {exc}[/red]")
 
     # ── Logique interne ──────────────────────────────────────────────────
 
@@ -806,7 +806,7 @@ class ArianeWebTUI(App):
         if no_text:
             self._log("[dim]Mode : métadonnées seulement[/dim]")
         else:
-            self._log("[dim]Mode : textes intégraux (--no-text pour désactiver)[/dim]")
+            self._log("[dim]Mode : textes intégraux (cocher « Métadonnées seulement » pour désactiver)[/dim]")
 
         all_decisions: list[dict] = []
 
