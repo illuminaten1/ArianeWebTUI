@@ -30,7 +30,7 @@ python3 arianeweb.py "89-271"
 ┌─────────────────────────── ArianeWeb ──────────────────────────────┐
 │  Requête : [_________________________] [Rechercher] [ ] Méta seul. │
 ├────────────────────────────────────────────────────────────────────┤
-│ ▸ Résultats                                                        │
+│ ▸ Résultats (55)                                                   │
 │ ────────────────────────────────────────────────────────────────── │
 │  Type │ Numéro  │ Date       │ Juridiction         │ URL           │
 │  CE   │ 461871  │ 06/01/2023 │ Conseil d'État      │ https://…     │
@@ -46,24 +46,33 @@ python3 arianeweb.py "89-271"
 
 ### Interface principale
 
-| Touche      | Action                                        |
-|-------------|-----------------------------------------------|
-| `F5`        | Lancer la recherche                           |
-| `Entrée`    | Lancer la recherche (depuis le champ)         |
-| `Échap`     | Annuler la recherche en cours                 |
-| `Ctrl+S`    | Exporter les résultats en JSON                |
-| `Q`         | Quitter                                       |
+| Touche      | Action                                              |
+|-------------|-----------------------------------------------------|
+| `F5`        | Lancer la recherche                                 |
+| `Entrée`    | Lancer la recherche (depuis le champ de saisie)     |
+| `/`         | Repositionner le focus dans le champ de recherche   |
+| `Échap`     | Annuler la recherche en cours                       |
+| `Ctrl+S`    | Exporter les résultats en JSON                      |
+| `Q`         | Quitter                                             |
 
 ### Visualisateur de décision
 
-| Touche          | Action                         |
-|-----------------|--------------------------------|
-| `Entrée`        | Ouvrir la décision sélectionnée |
-| `+` / `=`       | Agrandir (zoom +)              |
-| `-`             | Réduire (zoom −)               |
-| `0`             | Zoom normal                    |
-| `↑ ↓ PgUp PgDn` | Défiler dans le texte          |
-| `Échap` / `Q`  | Fermer                         |
+| Touche           | Action                          |
+|------------------|---------------------------------|
+| `Entrée`         | Ouvrir la décision sélectionnée |
+| `+` / `=`        | Agrandir (zoom +)               |
+| `-`              | Réduire (zoom −)                |
+| `0`              | Zoom normal                     |
+| `↑ ↓ PgUp PgDn`  | Défiler dans le texte           |
+| `Échap` / `Q`    | Fermer                          |
+
+### Modal de confirmation
+
+| Touche        | Action                       |
+|---------------|------------------------------|
+| `←` / `→`     | Naviguer entre les boutons   |
+| `Entrée`      | Activer le bouton sélectionné |
+| `Échap`       | Annuler                      |
 
 ## Syntaxe de recherche
 
@@ -95,11 +104,13 @@ Cochez **Métadonnées seulement** pour ne récupérer que type, numéro, date e
 sans télécharger les textes. Beaucoup plus rapide.
 
 Depuis le visualisateur, un bouton **⬇ Télécharger le texte** permet de récupérer
-le texte d'une décision individuelle à la demande.
+le texte d'une décision individuelle à la demande. En cas d'erreur réseau, le bouton
+se transforme en **↻ Réessayer**.
 
 ## Export JSON
 
 `Ctrl+S` génère un fichier `resultats_<requête>.json` dans le répertoire courant.
+Les caractères spéciaux (guillemets, espaces, slashs) sont remplacés par `_` dans le nom du fichier.
 
 ```json
 {
