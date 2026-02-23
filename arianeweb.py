@@ -345,6 +345,19 @@ class DecisionScreen(ModalScreen):
         if not sid:
             return
         texte = fetch_document_text(sid)
+
+        if texte.startswith("[Erreur :"):
+            # Échec : on conserve _sinequa_id pour permettre une nouvelle tentative
+            def _show_error() -> None:
+                self.query_one("#decision-text", Static).update(
+                    f"[red]{texte}[/red]"
+                )
+                btn = self.query_one("#download-btn", Button)
+                btn.disabled = False
+                btn.label = "↻  Réessayer"
+            self.app.call_from_thread(_show_error)
+            return
+
         self.decision["texte"] = texte
         self.decision.pop("_sinequa_id", None)
 
@@ -636,9 +649,10 @@ class ArianeWebTUI(App):
     CSS = CSS
 
     BINDINGS = [
-        Binding("ctrl+s", "export_json", "Exporter JSON"),
+        Binding("ctrl+s", "export_json",   "Exporter JSON"),
         Binding("escape", "cancel_search", "Annuler"),
         Binding("f5",     "start_search",  "Rechercher"),
+        Binding("/",      "focus_search",  "Recherche",   show=False),
         Binding("q",      "quit",          "Quitter"),
     ]
 
@@ -725,6 +739,9 @@ class ArianeWebTUI(App):
     def action_start_search(self) -> None:
         self._run_search()
 
+    def action_focus_search(self) -> None:
+        self.query_one("#query-input", Input).focus()
+
     def action_cancel_search(self) -> None:
         if self._searching:
             self._cancel = True
@@ -735,13 +752,21 @@ class ArianeWebTUI(App):
             self._log("[yellow]Aucune décision à exporter.[/yellow]")
             return
         query    = self.query_one("#query-input", Input).value.strip()
+        # Exclure les clés internes (préfixe _) de l'export
+        clean_decisions = [
+            {k: v for k, v in d.items() if not k.startswith("_")}
+            for d in self.all_decisions
+        ]
         output   = {
             "requete":         query,
             "date_extraction": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "total":           len(self.all_decisions),
-            "decisions":       self.all_decisions,
+            "total":           len(clean_decisions),
+            "decisions":       clean_decisions,
         }
-        out_file = f"resultats_{query.replace('/', '-').replace(' ', '_')}.json"
+        # Nettoyer le nom de fichier (guillemets, espaces, slashs…)
+        safe_query = re.sub(r'[^\w\-]', '_', query)
+        safe_query = re.sub(r'_+', '_', safe_query).strip('_')
+        out_file = f"resultats_{safe_query}.json"
         with open(out_file, "w", encoding="utf-8") as f:
             json.dump(output, f, ensure_ascii=False, indent=2)
         self._log(f"[bold green]✓ Exporté → {out_file}[/bold green]")
@@ -764,17 +789,18 @@ class ArianeWebTUI(App):
 
         table = self.query_one("#results-table", DataTable)
         table.clear()
+        self.query_one("#results-title", Static).update("▸ Résultats")
 
         btn = self.query_one("#search-btn", Button)
         btn.disabled = True
         btn.label    = "Recherche…"
 
+        no_text = self.query_one("#no-text-cb", Checkbox).value
         self._set_status(f"Recherche en cours : « {query} »")
-        self._search_worker(query)
+        self._search_worker(query, no_text)
 
     @work(thread=True, exclusive=True)
-    def _search_worker(self, query: str) -> None:
-        no_text = self.query_one("#no-text-cb", Checkbox).value
+    def _search_worker(self, query: str, no_text: bool) -> None:
 
         self._log(f"\n[bold]━━ Recherche : «[/bold] [cyan]{query}[/cyan] [bold]»━━[/bold]")
         if no_text:
@@ -866,11 +892,15 @@ class ArianeWebTUI(App):
         )
         self._set_status(f"{n} décision(s) — Ctrl+S pour exporter en JSON")
 
-        # Réactivation du bouton + focus sur le tableau si des résultats existent
+        # Réactivation du bouton + titre + focus sur le tableau si des résultats existent
         def _enable_btn() -> None:
             btn = self.query_one("#search-btn", Button)
             btn.disabled = False
             btn.label = "Rechercher"
+            n_res = len(all_decisions)
+            self.query_one("#results-title", Static).update(
+                f"▸ Résultats ({n_res})" if n_res else "▸ Résultats"
+            )
             if all_decisions:
                 self.query_one("#results-table", DataTable).focus()
 
