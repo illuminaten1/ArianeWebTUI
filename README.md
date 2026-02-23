@@ -37,6 +37,7 @@ python3 arianeweb.py "89-271"
 │  CAA  │ 22NT…   │ 14/03/2022 │ CAA de Nantes       │ https://…     │
 ├────────────────────────────────────────────────────────────────────┤
 │ ▸ Journal                                                          │
+│  ✓ Internet OK  —  conseil-etat.fr accessible                      │
 │  [CE] 55 résultat(s)                                               │
 │    1/55 CE 461871 (06/01/2023) ✓ 4 823 car.                        │
 └──────────────── F5 Rechercher • Ctrl+S Exporter • Q Quitter ───────┘
@@ -90,6 +91,21 @@ La syntaxe est celle d'ArianeWeb (moteur Sinequa).
 
 > Les opérateurs ET, OU, SAUF ne sont pas sensibles à la casse.
 > La recherche n'est pas sensible à la casse ni aux accents.
+
+## Test de connectivité
+
+Au démarrage, l'application vérifie automatiquement en arrière-plan :
+
+1. la **connectivité internet** (socket TCP vers `8.8.8.8:53`)
+2. l'**accessibilité du site** `conseil-etat.fr`
+
+Le résultat s'affiche dans le journal :
+
+| Message | Signification |
+|---------|---------------|
+| `✓ Internet OK  —  conseil-etat.fr accessible` | Tout est fonctionnel |
+| `⚠ Internet OK  —  conseil-etat.fr inaccessible` | Site en panne ou maintenance |
+| `✗ Pas de connexion internet détectée` | Pas de réseau |
 
 ## Modes de récupération
 
