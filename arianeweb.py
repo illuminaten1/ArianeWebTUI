@@ -9,6 +9,7 @@ import sys
 import json
 import time
 import re
+import socket
 import threading
 import urllib.request
 import urllib.parse
@@ -708,9 +709,48 @@ class ArianeWebTUI(App):
         )
 
         self.query_one("#query-input", Input).focus()
+        self._check_connectivity()
 
         if self.initial_query:
             self.call_after_refresh(self._run_search)
+
+    # ── Connectivité ─────────────────────────────────────────────────────
+
+    @work(thread=True)
+    def _check_connectivity(self) -> None:
+        """Vérifie la connectivité internet et l'accessibilité du site au démarrage."""
+        # 1. Connectivité internet via socket (rapide, sans HTTP)
+        internet_ok = False
+        try:
+            socket.create_connection(("8.8.8.8", 53), timeout=3)
+            internet_ok = True
+        except OSError:
+            pass
+
+        # 2. Accessibilité du site du Conseil d'État
+        site_ok = False
+        if internet_ok:
+            try:
+                req = urllib.request.Request(
+                    "https://www.conseil-etat.fr/arianeweb/",
+                    method="HEAD",
+                    headers={"User-Agent": "Mozilla/5.0"},
+                )
+                with urllib.request.urlopen(req, timeout=5):
+                    pass
+                site_ok = True
+            except Exception:
+                pass
+
+        if internet_ok and site_ok:
+            self._log("[green]✓ Internet OK  —  conseil-etat.fr accessible[/green]")
+        elif internet_ok:
+            self._log(
+                "[yellow]⚠ Internet OK  —  conseil-etat.fr inaccessible "
+                "(le site est peut-être en maintenance)[/yellow]"
+            )
+        else:
+            self._log("[red]✗ Pas de connexion internet détectée[/red]")
 
     # ── Événements ───────────────────────────────────────────────────────
 
